@@ -39,7 +39,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: 260px;
+  width: 130px;
 }
 
 #ljmk-root[data-editing="true"] .ljmk-panel-stack {
@@ -479,7 +479,7 @@
   }
 
   #ljmk-root .ljmk-panel-stack {
-    width: min(260px, calc(100vw - 16px));
+    width: min(130px, calc(100vw - 16px));
   }
 
   #ljmk-root[data-editing="true"] .ljmk-panel-stack {
