@@ -23,6 +23,10 @@ Compact Chrome extension for LinkedIn Jobs. It adds a right-side page widget tha
 - Auto rescans when LinkedIn changes the selected job and includes manual `Rescan job`.
 - Popup includes `Rescan job` and `Restart widget`.
 
+## Chrome Web Store
+
+See `CHROME_WEB_STORE.md` for the upload ZIP, listing assets, suggested listing copy, and privacy/permission notes.
+
 ## Scoring
 
 The percentage is a directional signal, not a final decision:
