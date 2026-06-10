@@ -331,19 +331,16 @@
 
     root.innerHTML = `
       <div class="ljmk-shell">
-        <div class="ljmk-rail" aria-label="Job match summary">
-          <button class="ljmk-rail-main" type="button" data-action="toggle" aria-label="${state.expanded ? "Collapse match panel" : "Open match panel"}">
-            <span class="ljmk-rail-score">${result.score}%</span>
-            <span class="ljmk-rail-count ljmk-very-positive">V${result.veryPositive.foundCount}</span>
-            <span class="ljmk-rail-count ljmk-positive">+${result.positive.foundCount}</span>
-            <span class="ljmk-rail-count ljmk-negative">-${result.negative.foundCount}</span>
-          </button>
-          <button class="ljmk-icon-button ljmk-rail-edit" type="button" data-action="edit" aria-label="Edit keywords" title="Edit keywords">
-            ${pencilIcon()}
-          </button>
-        </div>
-
         <div class="ljmk-panel-stack">
+          <div class="ljmk-rail" aria-label="Job match summary">
+            <button class="ljmk-rail-main" type="button" data-action="toggle" aria-label="${state.expanded ? "Collapse match panel" : "Open match panel"}">
+              <span class="ljmk-rail-score">${result.score}%</span>
+              <span class="ljmk-rail-count ljmk-very-positive">V${result.veryPositive.foundCount}</span>
+              <span class="ljmk-rail-count ljmk-positive">+${result.positive.foundCount}</span>
+              <span class="ljmk-rail-count ljmk-negative">-${result.negative.foundCount}</span>
+            </button>
+          </div>
+
           <section class="ljmk-mini-panel" aria-label="Job match found keywords">
             <button class="ljmk-mini-header" type="button" data-action="toggle">
               <span class="ljmk-mini-score">${result.score}%</span>

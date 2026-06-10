@@ -32,29 +32,30 @@
 #ljmk-root .ljmk-shell {
   align-items: flex-start;
   display: flex;
-  flex-direction: row-reverse;
-  gap: 6px;
+  flex-direction: column;
 }
 
 #ljmk-root .ljmk-panel-stack {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: 164px;
+  width: 260px;
+}
+
+#ljmk-root[data-editing="true"] .ljmk-panel-stack {
+  width: 356px;
 }
 
 #ljmk-root .ljmk-rail {
-  align-items: stretch;
+  align-items: center;
   background: var(--ljmk-bg);
   border: 1px solid var(--ljmk-border);
-  border-right: 0;
-  border-radius: 8px 0 0 8px;
+  border-radius: 8px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
   display: flex;
-  flex-direction: column;
-  height: 224px;
+  height: 44px;
   overflow: hidden;
-  width: 50px;
+  width: 100%;
 }
 
 #ljmk-root .ljmk-rail-main {
@@ -65,15 +66,15 @@
   cursor: pointer;
   display: flex;
   flex: 1;
-  flex-direction: column;
-  gap: 12px;
-  justify-content: center;
+  flex-direction: row;
+  gap: 8px;
+  justify-content: space-between;
   min-height: 0;
-  padding: 10px 4px;
+  padding: 7px 10px;
+  width: 100%;
 }
 
 #ljmk-root .ljmk-rail-main:hover,
-#ljmk-root .ljmk-rail-edit:hover,
 #ljmk-root .ljmk-icon-button:hover,
 #ljmk-root .ljmk-edit-link:hover {
   background: var(--ljmk-soft);
@@ -86,9 +87,9 @@
   font-size: 15px;
   font-weight: 800;
   line-height: 1;
-  padding: 6px 0;
-  text-align: center;
-  width: 40px;
+  padding: 6px 4px;
+  text-align: left;
+  width: auto;
 }
 
 #ljmk-root[data-tone="good"] .ljmk-rail-score,
@@ -112,28 +113,14 @@
   font-size: 13px;
   font-weight: 800;
   line-height: 1;
-  padding: 5px 0;
+  padding: 5px 6px;
   text-align: center;
-  width: 36px;
+  min-width: 34px;
 }
 
-#ljmk-root .ljmk-positive {
-  color: var(--ljmk-green);
-}
-
-#ljmk-root .ljmk-very-positive {
-  color: var(--ljmk-green-strong);
-}
-
-#ljmk-root .ljmk-negative {
-  color: var(--ljmk-red);
-}
-
-#ljmk-root .ljmk-rail-edit {
-  border-top: 1px solid var(--ljmk-border);
-  height: 44px;
-  width: 100%;
-}
+#ljmk-root .ljmk-positive { color: var(--ljmk-green); }
+#ljmk-root .ljmk-very-positive { color: var(--ljmk-green-strong); }
+#ljmk-root .ljmk-negative { color: var(--ljmk-red); }
 
 #ljmk-root .ljmk-icon-button {
   align-items: center;
@@ -179,7 +166,7 @@
   max-height: min(560px, calc(100vh - 112px));
   overflow: auto;
   padding: 8px;
-  width: 164px;
+  width: 100%;
 }
 
 #ljmk-root .ljmk-mini-header {
@@ -273,6 +260,10 @@
 #ljmk-root .ljmk-mini-edit:hover,
 #ljmk-root .ljmk-mini-header:hover {
   color: var(--ljmk-text);
+}
+
+#ljmk-root[data-expanded="true"] .ljmk-mini-edit {
+  display: none;
 }
 
 #ljmk-root .ljmk-header {
@@ -488,7 +479,11 @@
   }
 
   #ljmk-root .ljmk-panel-stack {
-    width: min(164px, calc(100vw - 66px));
+    width: min(260px, calc(100vw - 16px));
+  }
+
+  #ljmk-root[data-editing="true"] .ljmk-panel-stack {
+    width: min(356px, calc(100vw - 16px));
   }
 
   #ljmk-root .ljmk-panel {
