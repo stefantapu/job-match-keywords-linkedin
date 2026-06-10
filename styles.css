@@ -36,6 +36,13 @@
   gap: 6px;
 }
 
+#ljmk-root .ljmk-panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 164px;
+}
+
 #ljmk-root .ljmk-rail {
   align-items: stretch;
   background: var(--ljmk-bg);
@@ -153,10 +160,10 @@
   border-radius: 8px;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
   display: none;
-  max-height: min(720px, calc(100vh - 112px));
+  max-height: min(520px, calc(100vh - 360px));
   overflow: auto;
-  padding: 14px;
-  width: 340px;
+  padding: 10px;
+  width: 100%;
 }
 
 #ljmk-root[data-expanded="true"] .ljmk-panel {
@@ -173,10 +180,6 @@
   overflow: auto;
   padding: 8px;
   width: 164px;
-}
-
-#ljmk-root[data-expanded="true"] .ljmk-mini-panel {
-  display: none;
 }
 
 #ljmk-root .ljmk-mini-header {
@@ -484,7 +487,11 @@
     top: 72px;
   }
 
+  #ljmk-root .ljmk-panel-stack {
+    width: min(164px, calc(100vw - 66px));
+  }
+
   #ljmk-root .ljmk-panel {
-    width: min(340px, calc(100vw - 66px));
+    width: 100%;
   }
 }

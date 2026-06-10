@@ -343,23 +343,24 @@
           </button>
         </div>
 
-        <section class="ljmk-mini-panel" aria-label="Job match found keywords">
-          <button class="ljmk-mini-header" type="button" data-action="toggle">
-            <span class="ljmk-mini-score">${result.score}%</span>
-            <span class="ljmk-mini-status">${escapeHtml(result.status)}</span>
-          </button>
-          <div class="ljmk-mini-results">
-            ${renderMiniKeywordSection("Very positive", result.veryPositive.found, "very-positive")}
-            ${renderMiniKeywordSection("Positive", result.positive.found, "positive")}
-            ${renderMiniKeywordSection("Negative", result.negative.found, "negative")}
-          </div>
-          <button class="ljmk-mini-edit" type="button" data-action="edit">
-            ${pencilIcon()}
-            <span>Edit</span>
-          </button>
-        </section>
+        <div class="ljmk-panel-stack">
+          <section class="ljmk-mini-panel" aria-label="Job match found keywords">
+            <button class="ljmk-mini-header" type="button" data-action="toggle">
+              <span class="ljmk-mini-score">${result.score}%</span>
+              <span class="ljmk-mini-status">${escapeHtml(result.status)}</span>
+            </button>
+            <div class="ljmk-mini-results">
+              ${renderMiniKeywordSection("Very positive", result.veryPositive.found, "very-positive")}
+              ${renderMiniKeywordSection("Positive", result.positive.found, "positive")}
+              ${renderMiniKeywordSection("Negative", result.negative.found, "negative")}
+            </div>
+            <button class="ljmk-mini-edit" type="button" data-action="edit">
+              ${pencilIcon()}
+              <span>Edit</span>
+            </button>
+          </section>
 
-        <aside class="ljmk-panel" aria-label="Job match keywords panel">
+          <aside class="ljmk-panel" aria-label="Job match keywords panel">
           <header class="ljmk-header">
             <div>
               <div class="ljmk-title">Match</div>
@@ -418,7 +419,8 @@
               <span>Edit keywords</span>
             </button>
           </footer>
-        </aside>
+          </aside>
+        </div>
       </div>
     `;
 
