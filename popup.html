@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Job Match Keywords</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <header>
+        <h1>Job Match</h1>
+        <p id="status">Checking page...</p>
+      </header>
+      <section class="score" id="score" hidden>
+        <span id="scoreValue">0%</span>
+        <span>current match</span>
+      </section>
+      <div class="actions">
+        <button id="rescanButton" type="button">Rescan job</button>
+        <button id="restartButton" type="button">Restart widget</button>
+      </div>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
