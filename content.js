@@ -1,6 +1,7 @@
 (function () {
   const ROOT_ID = "ljmk-root";
   const STORAGE_KEYS = {
+    veryPositive: "ljmkVeryPositiveKeywords",
     positive: "ljmkPositiveKeywords",
     negative: "ljmkNegativeKeywords"
   };
@@ -23,6 +24,7 @@
   ];
 
   const state = {
+    veryPositiveInput: "",
     positiveInput: "",
     negativeInput: "",
     expanded: false,
@@ -42,6 +44,12 @@
       textLength: 0,
       score: 0,
       positive: {
+        total: 0,
+        foundCount: 0,
+        found: [],
+        missing: []
+      },
+      veryPositive: {
         total: 0,
         foundCount: 0,
         found: [],
@@ -89,7 +97,8 @@
 
   function loadKeywords() {
     return new Promise((resolve) => {
-      chrome.storage.sync.get([STORAGE_KEYS.positive, STORAGE_KEYS.negative], (items) => {
+      chrome.storage.sync.get([STORAGE_KEYS.veryPositive, STORAGE_KEYS.positive, STORAGE_KEYS.negative], (items) => {
+        state.veryPositiveInput = items[STORAGE_KEYS.veryPositive] || "";
         state.positiveInput = items[STORAGE_KEYS.positive] || "";
         state.negativeInput = items[STORAGE_KEYS.negative] || "";
         resolve();
@@ -97,12 +106,14 @@
     });
   }
 
-  function saveKeywords(positiveInput, negativeInput) {
+  function saveKeywords(veryPositiveInput, positiveInput, negativeInput) {
+    state.veryPositiveInput = sanitizeKeywordInput(veryPositiveInput);
     state.positiveInput = sanitizeKeywordInput(positiveInput);
     state.negativeInput = sanitizeKeywordInput(negativeInput);
 
     chrome.storage.sync.set(
       {
+        [STORAGE_KEYS.veryPositive]: state.veryPositiveInput,
         [STORAGE_KEYS.positive]: state.positiveInput,
         [STORAGE_KEYS.negative]: state.negativeInput
       },
@@ -175,11 +186,13 @@
 
   function scanAndRender() {
     const text = getJobText();
+    const veryPositiveKeywords = parseKeywords(state.veryPositiveInput);
     const positiveKeywords = parseKeywords(state.positiveInput);
     const negativeKeywords = parseKeywords(state.negativeInput);
 
     if (!text) {
       state.result = createEmptyResult("Job text not found");
+      state.result.veryPositive.total = veryPositiveKeywords.length;
       state.result.positive.total = positiveKeywords.length;
       state.result.negative.total = negativeKeywords.length;
       render();
@@ -187,20 +200,28 @@
     }
 
     const normalizedText = normalizeForSearch(text);
+    const veryPositive = analyzeKeywords(normalizedText, veryPositiveKeywords);
     const positive = analyzeKeywords(normalizedText, positiveKeywords);
     const negative = analyzeKeywords(normalizedText, negativeKeywords);
-    const positiveScore = positive.total > 0 ? positive.foundCount / positive.total : 0;
-    const negativeScore = negative.total > 0 ? negative.foundCount / negative.total : 0;
-    const score = clamp(Math.round(positiveScore * (1 - negativeScore * 0.3) * 100), 0, 100);
+    const score = calculateWeightedScore(veryPositive, positive, negative);
 
     state.result = {
       status: "Job text found",
       textLength: text.length,
       score,
+      veryPositive,
       positive,
       negative
     };
     render();
+  }
+
+  function calculateWeightedScore(veryPositive, positive, negative) {
+    const positiveSignal = Math.min(90, veryPositive.foundCount * 35 + positive.foundCount * 8);
+    const cleanBonus = positiveSignal > 0 && negative.foundCount === 0 ? 10 : 0;
+    const negativePenalty = Math.min(35, negative.foundCount * 7);
+
+    return clamp(Math.round(positiveSignal + cleanBonus - negativePenalty), 0, 100);
   }
 
   function analyzeKeywords(normalizedText, keywords) {
@@ -313,6 +334,7 @@
         <div class="ljmk-rail" aria-label="Job match summary">
           <button class="ljmk-rail-main" type="button" data-action="toggle" aria-label="${state.expanded ? "Collapse match panel" : "Open match panel"}">
             <span class="ljmk-rail-score">${result.score}%</span>
+            <span class="ljmk-rail-count ljmk-very-positive">V${result.veryPositive.foundCount}</span>
             <span class="ljmk-rail-count ljmk-positive">+${result.positive.foundCount}</span>
             <span class="ljmk-rail-count ljmk-negative">-${result.negative.foundCount}</span>
           </button>
@@ -320,6 +342,22 @@
             ${pencilIcon()}
           </button>
         </div>
+
+        <section class="ljmk-mini-panel" aria-label="Job match found keywords">
+          <button class="ljmk-mini-header" type="button" data-action="toggle">
+            <span class="ljmk-mini-score">${result.score}%</span>
+            <span class="ljmk-mini-status">${escapeHtml(result.status)}</span>
+          </button>
+          <div class="ljmk-mini-results">
+            ${renderMiniKeywordSection("Very positive", result.veryPositive.found, "very-positive")}
+            ${renderMiniKeywordSection("Positive", result.positive.found, "positive")}
+            ${renderMiniKeywordSection("Negative", result.negative.found, "negative")}
+          </div>
+          <button class="ljmk-mini-edit" type="button" data-action="edit">
+            ${pencilIcon()}
+            <span>Edit</span>
+          </button>
+        </section>
 
         <aside class="ljmk-panel" aria-label="Job match keywords panel">
           <header class="ljmk-header">
@@ -340,12 +378,15 @@
           <section class="ljmk-score-card">
             <div class="ljmk-score-value">${result.score}%</div>
             <div class="ljmk-score-meta">
+              <span class="ljmk-pill ljmk-very-positive">V${result.veryPositive.foundCount}/${result.veryPositive.total}</span>
               <span class="ljmk-pill ljmk-positive">+${result.positive.foundCount}/${result.positive.total}</span>
               <span class="ljmk-pill ljmk-negative">-${result.negative.foundCount}/${result.negative.total}</span>
             </div>
           </section>
 
           <section class="ljmk-results" ${state.editing ? "hidden" : ""}>
+            ${renderKeywordSection("Very positive found", result.veryPositive.found, "very-positive", true)}
+            ${renderKeywordSection("Very positive missing", result.veryPositive.missing, "muted", false)}
             ${renderKeywordSection("Positive found", result.positive.found, "positive", true)}
             ${renderKeywordSection("Positive missing", result.positive.missing, "muted", false)}
             ${renderKeywordSection("Negative found", result.negative.found, "negative", true)}
@@ -354,8 +395,12 @@
 
           <section class="ljmk-editor" ${state.editing ? "" : "hidden"}>
             <label class="ljmk-field">
+              <span>Very positive keywords</span>
+              <textarea data-field="very-positive" rows="2" spellcheck="false" placeholder="React, TypeScript">${escapeHtml(state.veryPositiveInput)}</textarea>
+            </label>
+            <label class="ljmk-field">
               <span>Positive keywords</span>
-              <textarea data-field="positive" rows="3" spellcheck="false" placeholder="React, TypeScript, remote work">${escapeHtml(state.positiveInput)}</textarea>
+              <textarea data-field="positive" rows="3" spellcheck="false" placeholder="Frontend, SaaS, remote work">${escapeHtml(state.positiveInput)}</textarea>
             </label>
             <label class="ljmk-field">
               <span>Negative keywords</span>
@@ -396,6 +441,22 @@
     `;
   }
 
+  function renderMiniKeywordSection(title, items, tone) {
+    const visibleItems = items.slice(0, 5);
+    const hiddenCount = Math.max(0, items.length - visibleItems.length);
+    const content = visibleItems.length
+      ? visibleItems.map((item) => `<span class="ljmk-chip ljmk-chip-${tone}">${escapeHtml(`${item.label} x${item.count}`)}</span>`).join("")
+      : `<span class="ljmk-empty">None</span>`;
+    const more = hiddenCount > 0 ? `<span class="ljmk-chip ljmk-chip-muted">+${hiddenCount} more</span>` : "";
+
+    return `
+      <div class="ljmk-mini-section">
+        <div class="ljmk-mini-title">${escapeHtml(title)}</div>
+        <div class="ljmk-mini-chips">${content}${more}</div>
+      </div>
+    `;
+  }
+
   function bindEvents() {
     root.querySelectorAll("[data-action]").forEach((element) => {
       element.addEventListener("click", handleAction);
@@ -430,7 +491,7 @@
       state.expanded = true;
       state.editing = true;
       render();
-      const field = root.querySelector('[data-field="positive"]');
+      const field = root.querySelector('[data-field="very-positive"]');
       if (field) field.focus();
       return;
     }
@@ -442,9 +503,10 @@
     }
 
     if (action === "save") {
+      const veryPositiveInput = root.querySelector('[data-field="very-positive"]')?.value || "";
       const positiveInput = root.querySelector('[data-field="positive"]')?.value || "";
       const negativeInput = root.querySelector('[data-field="negative"]')?.value || "";
-      saveKeywords(positiveInput, negativeInput);
+      saveKeywords(veryPositiveInput, positiveInput, negativeInput);
       return;
     }
 
