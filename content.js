@@ -344,7 +344,6 @@
           <section class="ljmk-mini-panel" aria-label="Job match found keywords">
             <button class="ljmk-mini-header" type="button" data-action="toggle">
               <span class="ljmk-mini-score">${result.score}%</span>
-              <span class="ljmk-mini-status">${escapeHtml(result.status)}</span>
             </button>
             <div class="ljmk-mini-results">
               ${renderMiniKeywordSection("Very positive", result.veryPositive.found, "very-positive")}
