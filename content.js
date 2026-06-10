@@ -7,6 +7,8 @@
   };
 
   const JOB_TEXT_SELECTORS = [
+    '[componentkey^="JobDetails_AboutTheJob_"] [data-testid="expandable-text-box"]',
+    '[data-sdui-component*="aboutTheJob"] [data-testid="expandable-text-box"]',
     "#job-details",
     ".jobs-description-content__text--stretch",
     ".jobs-description .jobs-box__html-content",
@@ -20,7 +22,8 @@
     /^\s*Show more\s*$/gim,
     /^\s*Show less\s*$/gim,
     /^\s*See more\s*$/gim,
-    /^\s*See less\s*$/gim
+    /^\s*See less\s*$/gim,
+    /…\s*more\s*$/gim
   ];
 
   const state = {

@@ -19,6 +19,7 @@ Compact Chrome extension for LinkedIn Jobs. It adds a right-side page widget tha
 - Uses weighted scoring instead of dividing matches by the full keyword list size.
 - Shows repeated occurrences as `keyword xN`.
 - Reads only the job description, primarily from `#job-details`.
+- Supports LinkedIn's newer SDUI/AI Power Search job details markup.
 - Auto rescans when LinkedIn changes the selected job and includes manual `Rescan job`.
 - Popup includes `Rescan job` and `Restart widget`.
 
