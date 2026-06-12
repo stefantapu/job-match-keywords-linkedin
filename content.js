@@ -1,5 +1,6 @@
 (function () {
   const ROOT_ID = "ljmk-root";
+  const INSTANCE_ID = `${Date.now()}-${Math.random()}`;
   const STORAGE_KEYS = {
     veryPositive: "ljmkVeryPositiveKeywords",
     positive: "ljmkPositiveKeywords",
@@ -30,8 +31,9 @@
     veryPositiveInput: "",
     positiveInput: "",
     negativeInput: "",
-    expanded: false,
     editing: false,
+    active: false,
+    keywordsLoaded: false,
     result: createEmptyResult("Scanning..."),
     lastUrl: location.href,
     lastJobId: getCurrentJobId(),
@@ -40,6 +42,7 @@
   };
 
   let root;
+  let lifecycleTimer;
 
   function createEmptyResult(status) {
     return {
@@ -68,42 +71,62 @@
   }
 
   function init() {
+    if (!isLinkedInJobsPage()) {
+      destroyWidget();
+      return;
+    }
+
     const existing = document.getElementById(ROOT_ID);
     if (existing) existing.remove();
 
     root = document.createElement("div");
     root.id = ROOT_ID;
-    root.setAttribute("data-expanded", "false");
     root.setAttribute("data-editing", "false");
     document.documentElement.appendChild(root);
+    state.active = true;
+    state.editing = false;
+    state.lastUrl = location.href;
+    state.lastJobId = getCurrentJobId();
 
     render();
-    loadKeywords().then(() => {
+    ensureKeywordsLoaded().then(() => {
+      if (!state.active || !isLinkedInJobsPage()) return;
       scanAndRender();
       watchLinkedInChanges();
     });
   }
 
   function destroy() {
+    stopLifecycleWatcher();
+    destroyWidget();
+  }
+
+  function destroyWidget() {
     state.observers.forEach((observer) => observer.disconnect());
     state.timers.forEach((timer) => clearInterval(timer));
     state.observers = [];
     state.timers = [];
+    state.active = false;
+    state.editing = false;
     const existing = document.getElementById(ROOT_ID);
     if (existing) existing.remove();
+    root = null;
   }
 
   function restart() {
-    destroy();
+    destroyWidget();
     init();
   }
 
-  function loadKeywords() {
+  function ensureKeywordsLoaded() {
+    if (state.keywordsLoaded) return Promise.resolve();
+
     return new Promise((resolve) => {
       chrome.storage.sync.get([STORAGE_KEYS.veryPositive, STORAGE_KEYS.positive, STORAGE_KEYS.negative], (items) => {
         state.veryPositiveInput = items[STORAGE_KEYS.veryPositive] || "";
         state.positiveInput = items[STORAGE_KEYS.positive] || "";
         state.negativeInput = items[STORAGE_KEYS.negative] || "";
+        state.keywordsLoaded = true;
         resolve();
       });
     });
@@ -166,17 +189,28 @@
   }
 
   function getJobText() {
-    for (const selector of JOB_TEXT_SELECTORS) {
-      const element = document.querySelector(selector);
-      if (!element) continue;
+    let bestText = "";
 
-      const text = cleanJobText(element.innerText || element.textContent || "");
-      if (text.length > 80) {
-        return text;
-      }
+    for (const selector of JOB_TEXT_SELECTORS) {
+      const elements = Array.from(document.querySelectorAll(selector));
+
+      elements.forEach((element) => {
+        if (!isElementVisible(element)) return;
+
+        const text = cleanJobText(element.innerText || element.textContent || "");
+        if (text.length > bestText.length) bestText = text;
+      });
+
+      if (bestText.length > 80) return bestText;
     }
 
-    return "";
+    return bestText;
+  }
+
+  function isElementVisible(element) {
+    const rect = element.getBoundingClientRect();
+    const style = window.getComputedStyle(element);
+    return rect.width > 0 && rect.height > 0 && style.visibility !== "hidden" && style.display !== "none";
   }
 
   function cleanJobText(value) {
@@ -188,6 +222,11 @@
   }
 
   function scanAndRender() {
+    if (!isLinkedInJobsPage()) {
+      destroyWidget();
+      return;
+    }
+
     const text = getJobText();
     const veryPositiveKeywords = parseKeywords(state.veryPositiveInput);
     const positiveKeywords = parseKeywords(state.positiveInput);
@@ -289,6 +328,46 @@
     }
   }
 
+  function isLinkedInJobsPage() {
+    return location.hostname === "www.linkedin.com" && location.pathname.startsWith("/jobs");
+  }
+
+  function syncPageLifecycle() {
+    const shouldRun = isLinkedInJobsPage();
+
+    if (!shouldRun) {
+      if (state.active || document.getElementById(ROOT_ID)) destroyWidget();
+      state.lastUrl = location.href;
+      state.lastJobId = getCurrentJobId();
+      return;
+    }
+
+    if (!state.active || !document.getElementById(ROOT_ID)) {
+      init();
+      return;
+    }
+
+    const nextUrl = location.href;
+    const nextJobId = getCurrentJobId();
+    if (nextUrl !== state.lastUrl || nextJobId !== state.lastJobId) {
+      state.lastUrl = nextUrl;
+      state.lastJobId = nextJobId;
+      rescan();
+    }
+  }
+
+  function startLifecycleWatcher() {
+    stopLifecycleWatcher();
+    lifecycleTimer = setInterval(syncPageLifecycle, 700);
+  }
+
+  function stopLifecycleWatcher() {
+    if (lifecycleTimer) {
+      clearInterval(lifecycleTimer);
+      lifecycleTimer = null;
+    }
+  }
+
   function watchLinkedInChanges() {
     const observer = new MutationObserver(debounce(() => {
       scanAndRender();
@@ -307,13 +386,30 @@
       if (nextUrl !== state.lastUrl || nextJobId !== state.lastJobId) {
         state.lastUrl = nextUrl;
         state.lastJobId = nextJobId;
-        debounceScan();
+        debounceRescan();
       }
     }, 700);
     state.timers.push(urlTimer);
   }
 
-  const debounceScan = debounce(() => scanAndRender(), 450);
+  function rescan() {
+    if (!isLinkedInJobsPage()) {
+      destroyWidget();
+      return;
+    }
+
+    state.result = createEmptyResult("Scanning...");
+    render();
+
+    [0, 350, 900, 1600].forEach((delay) => {
+      const timer = window.setTimeout(() => {
+        if (isLinkedInJobsPage()) scanAndRender();
+      }, delay);
+      state.timers.push(timer);
+    });
+  }
+
+  const debounceRescan = debounce(() => rescan(), 450);
 
   function debounce(callback, wait) {
     let timer;
@@ -328,7 +424,6 @@
 
     const result = state.result;
     const tone = getScoreTone(result.score);
-    root.setAttribute("data-expanded", String(state.expanded));
     root.setAttribute("data-editing", String(state.editing));
     root.setAttribute("data-tone", tone);
 
@@ -336,18 +431,18 @@
       <div class="ljmk-shell">
         <div class="ljmk-panel-stack">
           <div class="ljmk-rail" aria-label="Job match summary">
-            <button class="ljmk-rail-main" type="button" data-action="toggle" aria-label="${state.expanded ? "Collapse match panel" : "Open match panel"}">
+            <div class="ljmk-rail-main" aria-label="Job match summary">
               <span class="ljmk-rail-score">${result.score}%</span>
               <span class="ljmk-rail-count ljmk-very-positive">V${result.veryPositive.foundCount}</span>
               <span class="ljmk-rail-count ljmk-positive">+${result.positive.foundCount}</span>
               <span class="ljmk-rail-count ljmk-negative">-${result.negative.foundCount}</span>
-            </button>
+            </div>
           </div>
 
           <section class="ljmk-mini-panel" aria-label="Job match found keywords">
-            <button class="ljmk-mini-header" type="button" data-action="toggle">
+            <div class="ljmk-mini-header">
               <span class="ljmk-mini-score">${result.score}%</span>
-            </button>
+            </div>
             <div class="ljmk-mini-results">
               ${renderMiniKeywordSection("Very positive", result.veryPositive.found, "very-positive")}
               ${renderMiniKeywordSection("Positive", result.positive.found, "positive")}
@@ -359,41 +454,19 @@
             </button>
           </section>
 
-          <aside class="ljmk-panel" aria-label="Job match keywords panel">
+          <aside class="ljmk-panel" aria-label="Edit job match keywords">
           <header class="ljmk-header">
             <div>
-              <div class="ljmk-title">Match</div>
-              <div class="ljmk-status">${escapeHtml(result.status)}</div>
+              <div class="ljmk-title">Edit keywords</div>
             </div>
             <div class="ljmk-header-actions">
-              <button class="ljmk-icon-button" type="button" data-action="rescan" aria-label="Rescan job" title="Rescan job">
-                ${refreshIcon()}
-              </button>
               <button class="ljmk-icon-button" type="button" data-action="collapse" aria-label="Collapse panel" title="Collapse panel">
                 ${closeIcon()}
               </button>
             </div>
           </header>
 
-          <section class="ljmk-score-card">
-            <div class="ljmk-score-value">${result.score}%</div>
-            <div class="ljmk-score-meta">
-              <span class="ljmk-pill ljmk-very-positive">V${result.veryPositive.foundCount}/${result.veryPositive.total}</span>
-              <span class="ljmk-pill ljmk-positive">+${result.positive.foundCount}/${result.positive.total}</span>
-              <span class="ljmk-pill ljmk-negative">-${result.negative.foundCount}/${result.negative.total}</span>
-            </div>
-          </section>
-
-          <section class="ljmk-results" ${state.editing ? "hidden" : ""}>
-            ${renderKeywordSection("Very positive found", result.veryPositive.found, "very-positive", true)}
-            ${renderKeywordSection("Very positive missing", result.veryPositive.missing, "muted", false)}
-            ${renderKeywordSection("Positive found", result.positive.found, "positive", true)}
-            ${renderKeywordSection("Positive missing", result.positive.missing, "muted", false)}
-            ${renderKeywordSection("Negative found", result.negative.found, "negative", true)}
-            ${renderKeywordSection("Negative missing", result.negative.missing, "muted", false)}
-          </section>
-
-          <section class="ljmk-editor" ${state.editing ? "" : "hidden"}>
+          <section class="ljmk-editor">
             <label class="ljmk-field">
               <span>Very positive keywords</span>
               <textarea data-field="very-positive" rows="2" spellcheck="false" placeholder="React, TypeScript">${escapeHtml(state.veryPositiveInput)}</textarea>
@@ -412,34 +485,12 @@
             </div>
           </section>
 
-          <footer class="ljmk-footer">
-            <button class="ljmk-edit-link" type="button" data-action="edit">
-              ${pencilIcon()}
-              <span>Edit keywords</span>
-            </button>
-          </footer>
           </aside>
         </div>
       </div>
     `;
 
     bindEvents();
-  }
-
-  function renderKeywordSection(title, items, tone, hasCounts) {
-    const content = items.length
-      ? items.map((item) => {
-          const label = hasCounts ? `${item.label} x${item.count}` : item;
-          return `<span class="ljmk-chip ljmk-chip-${tone}">${escapeHtml(label)}</span>`;
-        }).join("")
-      : `<span class="ljmk-empty">None</span>`;
-
-    return `
-      <div class="ljmk-keyword-section">
-        <div class="ljmk-section-title">${escapeHtml(title)}</div>
-        <div class="ljmk-chip-list">${content}</div>
-      </div>
-    `;
   }
 
   function renderMiniKeywordSection(title, items, tone) {
@@ -475,21 +526,13 @@
   function handleAction(event) {
     const action = event.currentTarget.getAttribute("data-action");
 
-    if (action === "toggle") {
-      state.expanded = !state.expanded;
-      render();
-      return;
-    }
-
     if (action === "collapse") {
-      state.expanded = false;
       state.editing = false;
       render();
       return;
     }
 
     if (action === "edit") {
-      state.expanded = true;
       state.editing = true;
       render();
       const field = root.querySelector('[data-field="very-positive"]');
@@ -512,7 +555,7 @@
     }
 
     if (action === "rescan") {
-      scanAndRender();
+      rescan();
     }
   }
 
@@ -533,14 +576,6 @@
     `;
   }
 
-  function refreshIcon() {
-    return `
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M17.7 6.3A8 8 0 0 0 4.3 10H2a10 10 0 0 1 16.9-5.1L21 2.8V9h-6.2l2.9-2.7ZM6.3 17.7A8 8 0 0 0 19.7 14H22A10 10 0 0 1 5.1 19.1L3 21.2V15h6.2l-2.9 2.7Z"/>
-      </svg>
-    `;
-  }
-
   function closeIcon() {
     return `
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -550,10 +585,11 @@
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (window.__ljmkInstanceId !== INSTANCE_ID) return false;
     if (!message || message.source !== "ljmk-popup") return false;
 
     if (message.type === "rescan") {
-      scanAndRender();
+      rescan();
       sendResponse({ ok: true, status: state.result.status, score: state.result.score });
       return true;
     }
@@ -576,11 +612,13 @@
     window.__ljmkWidget.destroy();
   }
 
+  window.__ljmkInstanceId = INSTANCE_ID;
   window.__ljmkWidget = {
     destroy,
     restart,
-    scan: scanAndRender
+    scan: rescan
   };
 
-  init();
+  startLifecycleWatcher();
+  syncPageLifecycle();
 })();

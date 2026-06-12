@@ -14,7 +14,7 @@ restartButton.addEventListener("click", () => sendCommand("restart"));
 function init() {
   chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
     activeTabId = tab?.id || null;
-    isLinkedInJobsPage = /^https:\/\/www\.linkedin\.com\/jobs\//.test(tab?.url || "");
+    isLinkedInJobsPage = isLinkedInJobsUrl(tab?.url || "");
 
     if (!activeTabId || !isLinkedInJobsPage) {
       setUnavailable();
@@ -59,6 +59,11 @@ function sendCommand(type, retryAfterInject = true) {
       scoreValueElement.textContent = `${response.score}%`;
       scoreElement.hidden = false;
     }
+
+    if (type === "rescan") {
+      setStatus("Rescanning job...");
+      window.setTimeout(() => sendCommand("status"), 1900);
+    }
   });
 }
 
@@ -90,4 +95,13 @@ function setStatus(value) {
 function setButtonsDisabled(disabled) {
   rescanButton.disabled = disabled;
   restartButton.disabled = disabled;
+}
+
+function isLinkedInJobsUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.hostname === "www.linkedin.com" && url.pathname.startsWith("/jobs");
+  } catch (_error) {
+    return false;
+  }
 }

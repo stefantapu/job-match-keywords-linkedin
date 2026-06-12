@@ -5,10 +5,10 @@
   "version": "0.1.0",
   "description": "A compact LinkedIn Jobs sidebar for matching vacancy descriptions against positive and negative keywords.",
   "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["https://www.linkedin.com/jobs/*"],
+  "host_permissions": ["https://www.linkedin.com/*"],
   "content_scripts": [
     {
-      "matches": ["https://www.linkedin.com/jobs/*"],
+      "matches": ["https://www.linkedin.com/*"],
       "js": ["content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"

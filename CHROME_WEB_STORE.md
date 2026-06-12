@@ -46,7 +46,7 @@ Privacy note:
 - `storage`: saves the user's keyword lists between sessions.
 - `activeTab`: lets the popup send rescan/restart commands to the active LinkedIn Jobs tab.
 - `scripting`: lets the popup restart the widget on an already-open LinkedIn Jobs tab if the content script is not responding.
-- Host permission `https://www.linkedin.com/jobs/*`: limits the content script to LinkedIn Jobs pages.
+- Host permission `https://www.linkedin.com/*`: lets the content script detect LinkedIn single-page navigation into and out of Jobs pages. The widget is only shown on LinkedIn Jobs pages.
 
 ## Manual dashboard checklist
 

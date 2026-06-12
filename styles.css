@@ -68,7 +68,7 @@
   background: transparent;
   border: 0;
   color: inherit;
-  cursor: pointer;
+  cursor: default;
   display: flex;
   flex: 1;
   flex-direction: row;
@@ -79,7 +79,6 @@
   width: 100%;
 }
 
-#ljmk-root .ljmk-rail-main:hover,
 #ljmk-root .ljmk-icon-button:hover,
 #ljmk-root .ljmk-edit-link:hover {
   background: rgba(100, 108, 255, 0.08);
@@ -158,14 +157,18 @@
   border-radius: 8px;
   box-shadow: 0 18px 44px rgba(100, 108, 255, 0.16), 0 8px 22px rgba(15, 23, 42, 0.08);
   display: none;
-  max-height: min(520px, calc(100vh - 360px));
+  max-height: min(560px, calc(100vh - 156px));
   overflow: auto;
   padding: 10px;
   width: 100%;
 }
 
-#ljmk-root[data-expanded="true"] .ljmk-panel {
+#ljmk-root[data-editing="true"] .ljmk-panel {
   display: block;
+}
+
+#ljmk-root[data-editing="true"] .ljmk-mini-panel {
+  display: none;
 }
 
 #ljmk-root .ljmk-mini-panel {
@@ -188,7 +191,7 @@
   border: 0;
   border-bottom: 1px solid rgba(100, 108, 255, 0.18);
   color: inherit;
-  cursor: pointer;
+  cursor: default;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -224,7 +227,6 @@
 }
 
 #ljmk-root .ljmk-mini-title,
-#ljmk-root .ljmk-section-title,
 #ljmk-root .ljmk-field span {
   letter-spacing: 0.02em;
 }
@@ -276,12 +278,11 @@
   width: 100%;
 }
 
-#ljmk-root .ljmk-mini-edit:hover,
-#ljmk-root .ljmk-mini-header:hover {
+#ljmk-root .ljmk-mini-edit:hover {
   color: var(--ljmk-text);
 }
 
-#ljmk-root[data-expanded="true"] .ljmk-mini-edit {
+#ljmk-root[data-editing="true"] .ljmk-mini-edit {
   display: none;
 }
 
@@ -311,28 +312,6 @@
   gap: 4px;
 }
 
-#ljmk-root .ljmk-score-card {
-  background: linear-gradient(180deg, #ffffff, #f7f8ff);
-  border: 1px solid rgba(100, 108, 255, 0.18);
-  border-radius: 8px;
-  margin-top: 14px;
-  padding: 12px;
-}
-
-#ljmk-root .ljmk-score-value {
-  font-size: 34px;
-  font-weight: 850;
-  letter-spacing: 0;
-  line-height: 1;
-}
-
-#ljmk-root .ljmk-score-meta {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-#ljmk-root .ljmk-pill,
 #ljmk-root .ljmk-chip {
   border-radius: 999px;
   display: inline-flex;
@@ -341,50 +320,22 @@
   line-height: 1.2;
 }
 
-#ljmk-root .ljmk-pill {
-  padding: 5px 8px;
-}
-
-#ljmk-root .ljmk-pill.ljmk-positive,
 #ljmk-root .ljmk-chip-positive {
   background: var(--ljmk-green-bg);
   border: 1px solid rgba(19, 121, 91, 0.08);
   color: var(--ljmk-green);
 }
 
-#ljmk-root .ljmk-pill.ljmk-very-positive,
 #ljmk-root .ljmk-chip-very-positive {
   background: var(--ljmk-green-strong-bg);
   border: 1px solid rgba(15, 107, 79, 0.1);
   color: var(--ljmk-green-strong);
 }
 
-#ljmk-root .ljmk-pill.ljmk-negative,
 #ljmk-root .ljmk-chip-negative {
   background: var(--ljmk-red-bg);
   border: 1px solid rgba(180, 35, 24, 0.08);
   color: var(--ljmk-red);
-}
-
-#ljmk-root .ljmk-results {
-  display: grid;
-  gap: 14px;
-  margin-top: 14px;
-}
-
-#ljmk-root .ljmk-section-title {
-  color: var(--ljmk-muted);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.2;
-  margin-bottom: 7px;
-  text-transform: uppercase;
-}
-
-#ljmk-root .ljmk-chip-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
 }
 
 #ljmk-root .ljmk-chip {
