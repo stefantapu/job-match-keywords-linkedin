@@ -54,47 +54,39 @@
 }
 
 #ljmk-root .ljmk-shell {
-  align-items: center;
-  display: flex;
   filter: drop-shadow(0 8px 40px rgba(0, 0, 0, 0.45));
-}
-
-#ljmk-root[data-side="right"] .ljmk-shell {
-  flex-direction: row-reverse;
-}
-
-#ljmk-root[data-side="left"] .ljmk-shell {
-  flex-direction: row;
+  position: relative;
 }
 
 #ljmk-root .ljmk-tab {
   align-items: center;
   background: var(--ljmk-card);
   border: 1px solid var(--ljmk-border);
+  border-radius: 8px 8px 0 0;
   color: var(--ljmk-muted);
   cursor: pointer;
   display: flex;
-  flex-shrink: 0;
-  height: 60px;
+  height: 28px;
   justify-content: center;
   padding: 0;
+  position: absolute;
+  top: -27px;
   transition: background 0.15s ease, color 0.15s ease;
-  width: 20px;
+  width: 34px;
+  z-index: 1;
 }
 
 #ljmk-root[data-side="right"] .ljmk-tab {
-  border-left: 0;
-  border-radius: 6px 0 0 6px;
+  right: 8px;
 }
 
 #ljmk-root[data-side="left"] .ljmk-tab {
-  border-radius: 0 6px 6px 0;
-  border-right: 0;
+  left: 8px;
 }
 
 #ljmk-root .ljmk-tab:hover,
 #ljmk-root .ljmk-icon-button:hover,
-#ljmk-root .ljmk-side-button:hover,
+#ljmk-root .ljmk-reload-button:hover,
 #ljmk-root .ljmk-edit-button:hover,
 #ljmk-root .ljmk-category-button:hover {
   background: var(--ljmk-accent);
@@ -102,9 +94,9 @@
 }
 
 #ljmk-root .ljmk-tab svg {
-  height: 10px;
+  height: 12px;
   transition: transform 0.2s ease;
-  width: 10px;
+  width: 12px;
 }
 
 #ljmk-root[data-side="right"][data-collapsed="true"] .ljmk-tab svg,
@@ -120,7 +112,11 @@
   max-height: 90vh;
   overflow: auto;
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
-  width: 188px;
+  width: 218px;
+}
+
+#ljmk-root[data-editing="true"] .ljmk-panel {
+  width: 356px;
 }
 
 #ljmk-root[data-side="right"] .ljmk-panel {
@@ -181,12 +177,14 @@
 }
 
 #ljmk-root .ljmk-header-actions {
+  align-items: center;
   display: flex;
-  gap: 2px;
+  gap: 4px;
   margin-left: auto;
 }
 
 #ljmk-root .ljmk-side-button,
+#ljmk-root .ljmk-reload-button,
 #ljmk-root .ljmk-icon-button,
 #ljmk-root .ljmk-edit-button {
   align-items: center;
@@ -198,16 +196,32 @@
   padding: 0;
 }
 
+#ljmk-root .ljmk-reload-button {
+  background: transparent;
+  border-radius: 6px;
+  height: 24px;
+  width: 24px;
+}
+
+#ljmk-root .ljmk-side-switch {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--ljmk-border);
+  border-radius: 7px;
+  display: inline-flex;
+  gap: 1px;
+  padding: 2px;
+}
+
 #ljmk-root .ljmk-side-button {
-  background: var(--ljmk-accent);
-  border-radius: 4px;
-  height: 18px;
-  width: 22px;
+  background: transparent;
+  border-radius: 5px;
+  height: 20px;
+  width: 20px;
 }
 
 #ljmk-root .ljmk-side-button.is-active {
-  background: var(--ljmk-primary);
-  color: var(--ljmk-primary-foreground);
+  background: rgba(79, 142, 247, 0.16);
+  color: var(--ljmk-primary);
 }
 
 #ljmk-root .ljmk-icon-button,
@@ -243,9 +257,12 @@
 }
 
 #ljmk-root .ljmk-gauge-svg {
+  height: 80px;
   inset: 0;
+  overflow: visible;
   position: absolute;
   transform: rotate(-90deg);
+  width: 80px;
 }
 
 #ljmk-root .ljmk-gauge-track {
@@ -290,6 +307,7 @@
   align-items: center;
   display: flex;
   gap: 5px;
+  justify-content: flex-end;
   min-width: 0;
 }
 
@@ -300,16 +318,6 @@
   width: 5px;
 }
 
-#ljmk-root .ljmk-score-label {
-  color: var(--ljmk-muted);
-  flex: 1;
-  font-size: 8px;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 #ljmk-root .ljmk-score-count {
   color: var(--ljmk-muted);
   flex: 0 0 auto;
@@ -317,6 +325,8 @@
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   line-height: 1.2;
+  min-width: 42px;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -363,15 +373,15 @@
 #ljmk-root .ljmk-keywords {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 10px 12px;
+  gap: 10px;
+  padding: 12px 12px 14px;
 }
 
 #ljmk-root .ljmk-section-head {
   align-items: center;
   color: var(--ljmk-muted);
   display: flex;
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 700;
   justify-content: space-between;
   letter-spacing: 0.07em;
@@ -388,7 +398,7 @@
 #ljmk-root .ljmk-category-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 7px;
 }
 
 #ljmk-root .ljmk-category-card {
@@ -406,8 +416,8 @@
   cursor: pointer;
   display: flex;
   gap: 8px;
-  min-height: 44px;
-  padding: 8px 10px;
+  min-height: 52px;
+  padding: 9px 10px;
   text-align: left;
   width: 100%;
 }
@@ -419,7 +429,7 @@
   color: var(--ljmk-category-color);
   display: flex;
   flex: 0 0 28px;
-  font-size: 10px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   font-weight: 750;
   height: 28px;
@@ -436,7 +446,7 @@
 
 #ljmk-root .ljmk-category-label {
   color: var(--ljmk-foreground);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.25;
   overflow: hidden;
@@ -446,7 +456,7 @@
 
 #ljmk-root .ljmk-category-meta {
   color: var(--ljmk-muted);
-  font-size: 8px;
+  font-size: 11px;
   line-height: 1.25;
   margin-top: 2px;
 }
@@ -480,16 +490,16 @@
   border-radius: 999px;
   color: var(--ljmk-category-color);
   display: inline-flex;
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.4;
   max-width: 100%;
   overflow-wrap: anywhere;
-  padding: 2px 6px;
+  padding: 3px 7px;
 }
 
 #ljmk-root .ljmk-empty {
   color: var(--ljmk-muted);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
@@ -596,6 +606,10 @@
 @media (max-width: 720px) {
   #ljmk-root .ljmk-panel {
     max-height: 88vh;
-    width: min(188px, calc(100vw - 28px));
+    width: min(218px, calc(100vw - 28px));
+  }
+
+  #ljmk-root[data-editing="true"] .ljmk-panel {
+    width: min(356px, calc(100vw - 28px));
   }
 }

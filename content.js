@@ -458,12 +458,17 @@
               <span class="ljmk-title">Job Match</span>
             </div>
             <div class="ljmk-header-actions">
-              <button class="ljmk-side-button ${state.side === "left" ? "is-active" : ""}" type="button" data-action="set-side" data-side="left" aria-label="Move panel left" title="Move left">
-                ${sideIcon("left")}
+              <button class="ljmk-reload-button" type="button" data-action="reload-page" aria-label="Reload page" title="Reload page">
+                ${reloadIcon()}
               </button>
-              <button class="ljmk-side-button ${state.side === "right" ? "is-active" : ""}" type="button" data-action="set-side" data-side="right" aria-label="Move panel right" title="Move right">
-                ${sideIcon("right")}
-              </button>
+              <span class="ljmk-side-switch" aria-label="Panel position">
+                <button class="ljmk-side-button ${state.side === "left" ? "is-active" : ""}" type="button" data-action="set-side" data-side="left" aria-label="Move panel left" title="Move left">
+                  ${sideIcon("left")}
+                </button>
+                <button class="ljmk-side-button ${state.side === "right" ? "is-active" : ""}" type="button" data-action="set-side" data-side="right" aria-label="Move panel right" title="Move right">
+                  ${sideIcon("right")}
+                </button>
+              </span>
             </div>
           </header>
 
@@ -486,9 +491,8 @@
         <div class="ljmk-score-lines">
           ${categories.map(renderScoreLine).join("")}
           <div class="ljmk-divider"></div>
-          <div class="ljmk-score-line ljmk-score-line-total">
+          <div class="ljmk-score-line ljmk-score-line-total" aria-label="Total keywords ${foundTotal} out of ${keywordTotal}">
             <span class="ljmk-score-dot is-empty"></span>
-            <span class="ljmk-score-label">Total</span>
             <span class="ljmk-score-count">${foundTotal}/${keywordTotal}</span>
           </div>
         </div>
@@ -591,9 +595,8 @@
 
   function renderScoreLine(category) {
     return `
-      <div class="ljmk-score-line ljmk-${category.key}">
+      <div class="ljmk-score-line ljmk-${category.key}" aria-label="${escapeHtml(category.label)} ${category.foundCount} out of ${category.total}">
         <span class="ljmk-score-dot"></span>
-        <span class="ljmk-score-label">${escapeHtml(category.label)}</span>
         <span class="ljmk-score-count">${category.foundCount}/${category.total}</span>
       </div>
     `;
@@ -651,6 +654,11 @@
       state.side = side === "left" ? "left" : "right";
       saveLayoutPreference({ [STORAGE_KEYS.side]: state.side });
       render();
+      return;
+    }
+
+    if (action === "reload-page") {
+      location.reload();
       return;
     }
 
@@ -727,11 +735,21 @@
     `;
   }
 
+  function reloadIcon() {
+    return `
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="M12.4 4.2A5.4 5.4 0 0 0 3 6.6H1.6A6.8 6.8 0 0 1 12.9 3l1.2-1.2v4.1h-4.1l1.4-1.7ZM3.6 11.8A5.4 5.4 0 0 0 13 9.4h1.4A6.8 6.8 0 0 1 3.1 13l-1.2 1.2v-4.1h4.1l-1.4 1.7Z"/>
+      </svg>
+    `;
+  }
+
   function sideIcon(side) {
-    const path = side === "left" ? "M6.8 3 3.2 6.5 6.8 10M3.5 6.5h7.3" : "M5.2 3l3.6 3.5L5.2 10M3.2 6.5h7.3";
+    const panelX = side === "left" ? "2.5" : "8.5";
+    const lineX = side === "left" ? "10.5" : "3.5";
     return `
       <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false">
-        <path d="${path}" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="${panelX}" y="2.5" width="3" height="9" rx="1" />
+        <path d="M${lineX} 3.2v7.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
       </svg>
     `;
   }
