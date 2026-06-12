@@ -4,7 +4,9 @@
   const STORAGE_KEYS = {
     veryPositive: "ljmkVeryPositiveKeywords",
     positive: "ljmkPositiveKeywords",
-    negative: "ljmkNegativeKeywords"
+    negative: "ljmkNegativeKeywords",
+    side: "ljmkPanelSide",
+    collapsed: "ljmkPanelCollapsed"
   };
 
   const JOB_TEXT_SELECTORS = [
@@ -32,6 +34,9 @@
     positiveInput: "",
     negativeInput: "",
     editing: false,
+    collapsed: false,
+    side: "right",
+    expandedCategories: {},
     active: false,
     keywordsLoaded: false,
     result: createEmptyResult("Scanning..."),
@@ -122,13 +127,24 @@
     if (state.keywordsLoaded) return Promise.resolve();
 
     return new Promise((resolve) => {
-      chrome.storage.sync.get([STORAGE_KEYS.veryPositive, STORAGE_KEYS.positive, STORAGE_KEYS.negative], (items) => {
+      chrome.storage.sync.get(
+        [
+          STORAGE_KEYS.veryPositive,
+          STORAGE_KEYS.positive,
+          STORAGE_KEYS.negative,
+          STORAGE_KEYS.side,
+          STORAGE_KEYS.collapsed
+        ],
+        (items) => {
         state.veryPositiveInput = items[STORAGE_KEYS.veryPositive] || "";
         state.positiveInput = items[STORAGE_KEYS.positive] || "";
         state.negativeInput = items[STORAGE_KEYS.negative] || "";
+        state.side = items[STORAGE_KEYS.side] === "left" ? "left" : "right";
+        state.collapsed = items[STORAGE_KEYS.collapsed] === true;
         state.keywordsLoaded = true;
         resolve();
-      });
+      }
+      );
     });
   }
 
@@ -425,87 +441,184 @@
     const result = state.result;
     const tone = getScoreTone(result.score);
     root.setAttribute("data-editing", String(state.editing));
+    root.setAttribute("data-collapsed", String(state.collapsed));
+    root.setAttribute("data-side", state.side);
     root.setAttribute("data-tone", tone);
 
     root.innerHTML = `
       <div class="ljmk-shell">
-        <div class="ljmk-panel-stack">
-          <div class="ljmk-rail" aria-label="Job match summary">
-            <div class="ljmk-rail-main" aria-label="Job match summary">
-              <span class="ljmk-rail-score">${result.score}%</span>
-              <span class="ljmk-rail-count ljmk-very-positive">V${result.veryPositive.foundCount}</span>
-              <span class="ljmk-rail-count ljmk-positive">+${result.positive.foundCount}</span>
-              <span class="ljmk-rail-count ljmk-negative">-${result.negative.foundCount}</span>
-            </div>
-          </div>
+        <button class="ljmk-tab" type="button" data-action="toggle-collapsed" title="${state.collapsed ? "Show match panel" : "Hide match panel"}" aria-label="${state.collapsed ? "Show match panel" : "Hide match panel"}">
+          ${chevronIcon()}
+        </button>
 
-          <section class="ljmk-mini-panel" aria-label="Job match found keywords">
-            <div class="ljmk-mini-header">
-              <span class="ljmk-mini-score">${result.score}%</span>
-            </div>
-            <div class="ljmk-mini-results">
-              ${renderMiniKeywordSection("Very positive", result.veryPositive.found, "very-positive")}
-              ${renderMiniKeywordSection("Positive", result.positive.found, "positive")}
-              ${renderMiniKeywordSection("Negative", result.negative.found, "negative")}
-            </div>
-            <button class="ljmk-mini-edit" type="button" data-action="edit">
-              ${pencilIcon()}
-              <span>Edit</span>
-            </button>
-          </section>
-
-          <aside class="ljmk-panel" aria-label="Edit job match keywords">
+        <aside class="ljmk-panel" aria-label="Job match keywords panel">
           <header class="ljmk-header">
-            <div>
-              <div class="ljmk-title">Edit keywords</div>
+            <div class="ljmk-title-wrap">
+              <span class="ljmk-status-dot" aria-hidden="true"></span>
+              <span class="ljmk-title">Job Match</span>
             </div>
             <div class="ljmk-header-actions">
-              <button class="ljmk-icon-button" type="button" data-action="collapse" aria-label="Collapse panel" title="Collapse panel">
-                ${closeIcon()}
+              <button class="ljmk-side-button ${state.side === "left" ? "is-active" : ""}" type="button" data-action="set-side" data-side="left" aria-label="Move panel left" title="Move left">
+                ${sideIcon("left")}
+              </button>
+              <button class="ljmk-side-button ${state.side === "right" ? "is-active" : ""}" type="button" data-action="set-side" data-side="right" aria-label="Move panel right" title="Move right">
+                ${sideIcon("right")}
               </button>
             </div>
           </header>
 
-          <section class="ljmk-editor">
-            <label class="ljmk-field">
-              <span>Very positive keywords</span>
-              <textarea data-field="very-positive" rows="2" spellcheck="false" placeholder="React, TypeScript">${escapeHtml(state.veryPositiveInput)}</textarea>
-            </label>
-            <label class="ljmk-field">
-              <span>Positive keywords</span>
-              <textarea data-field="positive" rows="3" spellcheck="false" placeholder="Frontend, SaaS, remote work">${escapeHtml(state.positiveInput)}</textarea>
-            </label>
-            <label class="ljmk-field">
-              <span>Negative keywords</span>
-              <textarea data-field="negative" rows="3" spellcheck="false" placeholder="PHP, unpaid, onsite only">${escapeHtml(state.negativeInput)}</textarea>
-            </label>
-            <div class="ljmk-editor-actions">
-              <button class="ljmk-button ljmk-button-secondary" type="button" data-action="cancel-edit">Cancel</button>
-              <button class="ljmk-button ljmk-button-primary" type="button" data-action="save">Save</button>
-            </div>
-          </section>
-
-          </aside>
-        </div>
+          ${state.editing ? renderEditor() : renderDashboard(result)}
+        </aside>
       </div>
     `;
 
     bindEvents();
   }
 
-  function renderMiniKeywordSection(title, items, tone) {
-    const visibleItems = items.slice(0, 5);
-    const hiddenCount = Math.max(0, items.length - visibleItems.length);
-    const content = visibleItems.length
-      ? visibleItems.map((item) => `<span class="ljmk-chip ljmk-chip-${tone}">${escapeHtml(`${item.label} x${item.count}`)}</span>`).join("")
-      : `<span class="ljmk-empty">None</span>`;
-    const more = hiddenCount > 0 ? `<span class="ljmk-chip ljmk-chip-muted">+${hiddenCount} more</span>` : "";
+  function renderDashboard(result) {
+    const categories = getCategoryViewModels(result);
+    const foundTotal = categories.reduce((total, category) => total + category.foundCount, 0);
+    const keywordTotal = categories.reduce((total, category) => total + category.total, 0);
 
     return `
-      <div class="ljmk-mini-section">
-        <div class="ljmk-mini-title">${escapeHtml(title)}</div>
-        <div class="ljmk-mini-chips">${content}${more}</div>
+      <section class="ljmk-score-section">
+        ${renderGauge(result.score)}
+        <div class="ljmk-score-lines">
+          ${categories.map(renderScoreLine).join("")}
+          <div class="ljmk-divider"></div>
+          <div class="ljmk-score-line ljmk-score-line-total">
+            <span class="ljmk-score-dot is-empty"></span>
+            <span class="ljmk-score-label">Total</span>
+            <span class="ljmk-score-count">${foundTotal}/${keywordTotal}</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="ljmk-divider ljmk-divider-wide"></div>
+
+      <section class="ljmk-keywords">
+        <div class="ljmk-section-head">
+          <span>Keywords</span>
+          <button class="ljmk-edit-button" type="button" data-action="edit" aria-label="Edit keywords" title="Edit keywords">
+            ${pencilIcon()}
+          </button>
+        </div>
+        <div class="ljmk-category-list">
+          ${categories.map(renderCategoryCard).join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderEditor() {
+    return `
+      <section class="ljmk-editor">
+        <div class="ljmk-editor-head">
+          <div>
+            <div class="ljmk-editor-title">Edit keywords</div>
+            <div class="ljmk-editor-subtitle">Comma-separated words or phrases</div>
+          </div>
+          <button class="ljmk-icon-button" type="button" data-action="cancel-edit" aria-label="Close editor" title="Close editor">
+            ${closeIcon()}
+          </button>
+        </div>
+        <label class="ljmk-field">
+          <span>Very positive</span>
+          <textarea data-field="very-positive" rows="3" spellcheck="false" placeholder="React, TypeScript">${escapeHtml(state.veryPositiveInput)}</textarea>
+        </label>
+        <label class="ljmk-field">
+          <span>Positive</span>
+          <textarea data-field="positive" rows="4" spellcheck="false" placeholder="Frontend, SaaS, remote work">${escapeHtml(state.positiveInput)}</textarea>
+        </label>
+        <label class="ljmk-field">
+          <span>Negative</span>
+          <textarea data-field="negative" rows="4" spellcheck="false" placeholder="PHP, unpaid, onsite only">${escapeHtml(state.negativeInput)}</textarea>
+        </label>
+        <div class="ljmk-editor-actions">
+          <button class="ljmk-button ljmk-button-secondary" type="button" data-action="cancel-edit">Cancel</button>
+          <button class="ljmk-button ljmk-button-primary" type="button" data-action="save">Save</button>
+        </div>
+      </section>
+    `;
+  }
+
+  function getCategoryViewModels(result) {
+    return [
+      {
+        key: "very-positive",
+        label: "Very Positive",
+        foundCount: result.veryPositive.foundCount,
+        total: result.veryPositive.total,
+        found: result.veryPositive.found
+      },
+      {
+        key: "positive",
+        label: "Positive",
+        foundCount: result.positive.foundCount,
+        total: result.positive.total,
+        found: result.positive.found
+      },
+      {
+        key: "negative",
+        label: "Negative",
+        foundCount: result.negative.foundCount,
+        total: result.negative.total,
+        found: result.negative.found
+      }
+    ];
+  }
+
+  function renderGauge(score) {
+    const size = 80;
+    const strokeWidth = 6;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const filled = (score / 100) * circumference;
+    const gap = circumference - filled;
+
+    return `
+      <div class="ljmk-gauge" aria-label="Current match ${score}%">
+        <svg class="ljmk-gauge-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+          <circle class="ljmk-gauge-track" cx="${size / 2}" cy="${size / 2}" r="${radius}" fill="none" stroke-width="${strokeWidth}"></circle>
+          <circle class="ljmk-gauge-fill" cx="${size / 2}" cy="${size / 2}" r="${radius}" fill="none" stroke-width="${strokeWidth}" stroke-dasharray="${filled} ${gap}"></circle>
+        </svg>
+        <div class="ljmk-gauge-value">
+          <span>${score}</span><span>%</span>
+        </div>
       </div>
+    `;
+  }
+
+  function renderScoreLine(category) {
+    return `
+      <div class="ljmk-score-line ljmk-${category.key}">
+        <span class="ljmk-score-dot"></span>
+        <span class="ljmk-score-label">${escapeHtml(category.label)}</span>
+        <span class="ljmk-score-count">${category.foundCount}/${category.total}</span>
+      </div>
+    `;
+  }
+
+  function renderCategoryCard(category) {
+    const expanded = state.expandedCategories[category.key] === true;
+    const words = category.found.length
+      ? category.found.map((item) => `<span class="ljmk-chip ljmk-chip-${category.key}">${escapeHtml(`${item.label} x${item.count}`)}</span>`).join("")
+      : `<span class="ljmk-empty">None found</span>`;
+
+    return `
+      <article class="ljmk-category-card ljmk-${category.key}">
+        <button class="ljmk-category-button" type="button" data-action="toggle-category" data-category="${category.key}" aria-expanded="${expanded}" aria-label="${escapeHtml(category.label)} keywords">
+          <span class="ljmk-category-bubble">${category.foundCount}</span>
+          <span class="ljmk-category-copy">
+            <span class="ljmk-category-label">${escapeHtml(category.label)}</span>
+            <span class="ljmk-category-meta">${category.foundCount} out of ${category.total}</span>
+          </span>
+          <span class="ljmk-category-chevron">${chevronDownIcon()}</span>
+        </button>
+        <div class="ljmk-category-words" ${expanded ? "" : "hidden"}>
+          ${words}
+        </div>
+      </article>
     `;
   }
 
@@ -526,13 +639,31 @@
   function handleAction(event) {
     const action = event.currentTarget.getAttribute("data-action");
 
-    if (action === "collapse") {
-      state.editing = false;
+    if (action === "toggle-collapsed") {
+      state.collapsed = !state.collapsed;
+      saveLayoutPreference({ [STORAGE_KEYS.collapsed]: state.collapsed });
+      render();
+      return;
+    }
+
+    if (action === "set-side") {
+      const side = event.currentTarget.getAttribute("data-side");
+      state.side = side === "left" ? "left" : "right";
+      saveLayoutPreference({ [STORAGE_KEYS.side]: state.side });
+      render();
+      return;
+    }
+
+    if (action === "toggle-category") {
+      const category = event.currentTarget.getAttribute("data-category");
+      state.expandedCategories[category] = state.expandedCategories[category] !== true;
       render();
       return;
     }
 
     if (action === "edit") {
+      state.collapsed = false;
+      saveLayoutPreference({ [STORAGE_KEYS.collapsed]: state.collapsed });
       state.editing = true;
       render();
       const field = root.querySelector('[data-field="very-positive"]');
@@ -559,6 +690,10 @@
     }
   }
 
+  function saveLayoutPreference(values) {
+    chrome.storage.sync.set(values);
+  }
+
   function escapeHtml(value) {
     return String(value || "")
       .replace(/&/g, "&amp;")
@@ -572,6 +707,31 @@
     return `
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M4 20h4.4L19.7 8.7a2.1 2.1 0 0 0 0-3L18.3 4.3a2.1 2.1 0 0 0-3 0L4 15.6V20Zm3.6-2H6v-1.6l8.7-8.7 1.6 1.6L7.6 18Zm10.1-10.1-1.6-1.6.6-.6 1.6 1.6-.6.6Z"/>
+      </svg>
+    `;
+  }
+
+  function chevronIcon() {
+    return `
+      <svg viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+        <path d="M7 2 3 5l4 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+  }
+
+  function chevronDownIcon() {
+    return `
+      <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+        <path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+  }
+
+  function sideIcon(side) {
+    const path = side === "left" ? "M6.8 3 3.2 6.5 6.8 10M3.5 6.5h7.3" : "M5.2 3l3.6 3.5L5.2 10M3.2 6.5h7.3";
+    return `
+      <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+        <path d="${path}" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     `;
   }
