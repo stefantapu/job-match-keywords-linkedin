@@ -88,6 +88,8 @@
 #ljmk-root .ljmk-icon-button:hover,
 #ljmk-root .ljmk-reload-button:hover,
 #ljmk-root .ljmk-edit-button:hover,
+#ljmk-root .ljmk-help:hover,
+#ljmk-root .ljmk-help:focus-visible,
 #ljmk-root .ljmk-category-button:hover {
   background: var(--ljmk-accent);
   color: var(--ljmk-foreground);
@@ -109,13 +111,14 @@
   border: 1px solid var(--ljmk-border);
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
+  max-height: calc(100vh - 36px);
   overflow: auto;
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
   width: 218px;
 }
 
 #ljmk-root[data-editing="true"] .ljmk-panel {
+  max-height: calc(100vh - 24px);
   width: 356px;
 }
 
@@ -186,14 +189,21 @@
 #ljmk-root .ljmk-side-button,
 #ljmk-root .ljmk-reload-button,
 #ljmk-root .ljmk-icon-button,
-#ljmk-root .ljmk-edit-button {
+#ljmk-root .ljmk-edit-button,
+#ljmk-root .ljmk-help {
   align-items: center;
   border: 0;
   color: var(--ljmk-muted);
-  cursor: pointer;
   display: inline-flex;
   justify-content: center;
   padding: 0;
+}
+
+#ljmk-root .ljmk-side-button,
+#ljmk-root .ljmk-reload-button,
+#ljmk-root .ljmk-icon-button,
+#ljmk-root .ljmk-edit-button {
+  cursor: pointer;
 }
 
 #ljmk-root .ljmk-reload-button {
@@ -225,11 +235,76 @@
 }
 
 #ljmk-root .ljmk-icon-button,
-#ljmk-root .ljmk-edit-button {
+#ljmk-root .ljmk-edit-button,
+#ljmk-root .ljmk-help {
   background: transparent;
   border-radius: 5px;
   height: 26px;
   width: 26px;
+}
+
+#ljmk-root .ljmk-help {
+  cursor: help;
+  outline: 0;
+  position: relative;
+}
+
+#ljmk-root .ljmk-help::after {
+  background: #111622;
+  border: 1px solid var(--ljmk-border);
+  border-radius: 7px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  color: var(--ljmk-foreground);
+  content: attr(data-tooltip);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.35;
+  max-width: none;
+  opacity: 0;
+  padding: 8px 9px;
+  pointer-events: none;
+  position: absolute;
+  right: -28px;
+  text-transform: none;
+  top: calc(100% + 8px);
+  transform: translateY(-3px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  white-space: normal;
+  width: 184px;
+  z-index: 3;
+}
+
+#ljmk-root .ljmk-help::before {
+  border: 6px solid transparent;
+  border-bottom-color: #111622;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 7px;
+  top: calc(100% - 3px);
+  transform: translateY(-3px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 4;
+}
+
+#ljmk-root .ljmk-help:hover::after,
+#ljmk-root .ljmk-help:hover::before,
+#ljmk-root .ljmk-help:focus-visible::after,
+#ljmk-root .ljmk-help:focus-visible::before {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#ljmk-root .ljmk-edit-button.is-empty {
+  background: rgba(79, 142, 247, 0.18);
+  box-shadow: 0 0 0 1px rgba(79, 142, 247, 0.35), 0 0 18px rgba(79, 142, 247, 0.28);
+  color: var(--ljmk-primary);
+}
+
+#ljmk-root .ljmk-edit-button.is-empty svg {
+  transform: rotate(-8deg);
 }
 
 #ljmk-root svg {
@@ -390,9 +465,39 @@
   text-transform: uppercase;
 }
 
+#ljmk-root .ljmk-section-tools {
+  align-items: center;
+  display: inline-flex;
+  gap: 2px;
+}
+
 #ljmk-root .ljmk-section-head svg {
   height: 15px;
   width: 15px;
+}
+
+#ljmk-root .ljmk-empty-notice {
+  background: rgba(79, 142, 247, 0.1);
+  border: 1px solid rgba(79, 142, 247, 0.32);
+  border-radius: 8px;
+  color: var(--ljmk-foreground);
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+}
+
+#ljmk-root .ljmk-empty-notice strong {
+  color: var(--ljmk-primary);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+#ljmk-root .ljmk-empty-notice span {
+  color: var(--ljmk-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 #ljmk-root .ljmk-category-list {
@@ -551,8 +656,9 @@
   color: var(--ljmk-foreground);
   min-height: 72px;
   outline: 0;
+  overflow: hidden;
   padding: 8px;
-  resize: vertical;
+  resize: none;
   scrollbar-color: var(--ljmk-accent) transparent;
   width: 100%;
 }

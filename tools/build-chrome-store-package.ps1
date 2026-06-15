@@ -3,7 +3,8 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $distDir = Join-Path $root "dist\chrome-web-store"
 $packageDir = Join-Path $distDir "package"
-$zipPath = Join-Path $distDir "linkedin-job-match-keywords-0.1.0.zip"
+$manifest = Get-Content -LiteralPath (Join-Path $root "manifest.json") | ConvertFrom-Json
+$zipPath = Join-Path $distDir "linkedin-job-match-keywords-$($manifest.version).zip"
 
 if (Test-Path $packageDir) {
   Remove-Item -LiteralPath $packageDir -Recurse -Force

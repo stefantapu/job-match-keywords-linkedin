@@ -16,6 +16,7 @@ Compact Chrome extension for LinkedIn Jobs. It adds a right-side page widget tha
 - Loads on `https://www.linkedin.com/*` so LinkedIn single-page navigation can add or remove the widget without a manual reload.
 - Stores keywords in `chrome.storage.sync`.
 - Uses comma-separated keywords only.
+- Prompts first-time users to add comma-separated keywords and explains the format in the sidebar.
 - Supports three keyword groups: `Very positive`, `Positive`, and `Negative`.
 - Uses weighted scoring instead of dividing matches by the full keyword list size.
 - Shows repeated occurrences as `keyword xN`.

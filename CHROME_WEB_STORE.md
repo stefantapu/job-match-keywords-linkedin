@@ -4,7 +4,13 @@
 
 Upload this ZIP in the Chrome Web Store Developer Dashboard:
 
-`dist/chrome-web-store/linkedin-job-match-keywords-0.1.0.zip`
+`dist/chrome-web-store/linkedin-job-match-keywords-0.1.2.zip`
+
+## Version 0.1.2 release notes
+
+Use this as the release note / change summary for the update:
+
+`Fixed keyword editing so typed changes are no longer lost during LinkedIn page rescans. Keyword text areas now automatically grow with their content, and the sidebar remembers which keyword groups were expanded or collapsed between sessions.`
 
 ## Store listing assets
 
@@ -33,7 +39,7 @@ Main features:
 
 - Add very positive, positive, and negative keyword lists.
 - Match full words and exact phrases in the job description.
-- See found and missing keywords with occurrence counts.
+- See found keywords with occurrence counts.
 - Get a directional match percentage without relying on LinkedIn's recommendations.
 - Works on classic LinkedIn Jobs pages and newer AI Power Search / SDUI job pages.
 
@@ -50,10 +56,10 @@ Privacy note:
 
 ## Manual dashboard checklist
 
-1. Create a new item in the Chrome Web Store Developer Dashboard.
-2. Upload `dist/chrome-web-store/linkedin-job-match-keywords-0.1.0.zip`.
-3. Add the listing assets above.
-4. Select a category such as `Productivity`.
-5. Fill in support/contact fields.
-6. Complete privacy practices using the privacy note above.
-7. Submit for review.
+1. Open the existing item in the Chrome Web Store Developer Dashboard.
+2. Go to `Package` and upload `dist/chrome-web-store/linkedin-job-match-keywords-0.1.2.zip`.
+3. Confirm the dashboard shows version `0.1.2`.
+4. Keep the existing listing assets unless you want to refresh screenshots.
+5. Add the version `0.1.2` release notes above if the dashboard asks for change details.
+6. Confirm privacy practices are unchanged using the privacy note above.
+7. Submit the update for review.

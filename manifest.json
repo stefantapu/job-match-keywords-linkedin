@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "LinkedIn Job Match Keywords",
   "short_name": "Job Match",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "A compact LinkedIn Jobs sidebar for matching vacancy descriptions against positive and negative keywords.",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["https://www.linkedin.com/*"],

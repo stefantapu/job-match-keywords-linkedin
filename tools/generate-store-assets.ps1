@@ -99,64 +99,102 @@ function Draw-BrandBackground($g, $width, $height) {
 }
 
 function Draw-WidgetMock($g, $x, $y, $scale) {
-  $cardBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(250, 255, 255, 255))
-  $borderPen = New-Object System.Drawing.Pen ([System.Drawing.ColorTranslator]::FromHtml("#CBD5FF")), ([Math]::Max(1, [int](1 * $scale)))
-  $greenBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#13795B"))
-  $greenBg = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#D8FAE9"))
-  $redBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#B42318"))
-  $redBg = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#FFF0EF"))
-  $darkBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#17212B"))
-  $mutedBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#657282"))
+  $cardBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#181C27"))
+  $secondaryBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#1E2333"))
+  $accentBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#232A3E"))
+  $borderPen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(28, 255, 255, 255)), ([Math]::Max(1, [int](1 * $scale)))
+  $trackPen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(18, 255, 255, 255)), ([Math]::Max(2, [int](6 * $scale)))
+  $bluePen = New-Object System.Drawing.Pen ([System.Drawing.ColorTranslator]::FromHtml("#4F8EF7")), ([Math]::Max(2, [int](6 * $scale)))
+  $bluePen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
+  $bluePen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
+  $textBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#E8EAF0"))
+  $mutedBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#6B7491"))
+  $blueBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#4F8EF7"))
+  $greenBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#22D3A0"))
+  $redBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#F05A6E"))
 
-  $w = [int](210 * $scale)
-  $railH = [int](42 * $scale)
-  $miniH = [int](300 * $scale)
-
-  $railPath = New-RoundedRect $x $y $w $railH ([int](8 * $scale))
-  $g.FillPath($cardBrush, $railPath)
-  $g.DrawPath($borderPen, $railPath)
-  Draw-Text $g "72%" "Segoe UI" ([int](18 * $scale)) "Bold" $greenBrush ($x + [int](12 * $scale)) $y ([int](60 * $scale)) $railH "Near"
-  Draw-Text $g "V2" "Segoe UI" ([int](13 * $scale)) "Bold" $greenBrush ($x + [int](78 * $scale)) $y ([int](34 * $scale)) $railH "Near"
-  Draw-Text $g "+5" "Segoe UI" ([int](13 * $scale)) "Bold" $greenBrush ($x + [int](120 * $scale)) $y ([int](34 * $scale)) $railH "Near"
-  Draw-Text $g "-1" "Segoe UI" ([int](13 * $scale)) "Bold" $redBrush ($x + [int](162 * $scale)) $y ([int](34 * $scale)) $railH "Near"
-
-  $panelPath = New-RoundedRect $x ($y + $railH + [int](8 * $scale)) $w $miniH ([int](8 * $scale))
+  $w = [int](218 * $scale)
+  $h = [int](330 * $scale)
+  $panelPath = New-RoundedRect $x $y $w $h ([int](10 * $scale))
   $g.FillPath($cardBrush, $panelPath)
   $g.DrawPath($borderPen, $panelPath)
-  Draw-Text $g "72%" "Segoe UI" ([int](38 * $scale)) "Bold" $greenBrush ($x + [int](12 * $scale)) ($y + $railH + [int](14 * $scale)) ($w - [int](24 * $scale)) ([int](48 * $scale)) "Near"
-  Draw-Text $g "VERY POSITIVE" "Segoe UI" ([int](11 * $scale)) "Bold" $mutedBrush ($x + [int](12 * $scale)) ($y + $railH + [int](76 * $scale)) ($w - [int](24 * $scale)) ([int](22 * $scale)) "Near"
 
-  $chipPath1 = New-RoundedRect ($x + [int](12 * $scale)) ($y + $railH + [int](104 * $scale)) ([int](110 * $scale)) ([int](28 * $scale)) ([int](8 * $scale))
-  $g.FillPath($greenBg, $chipPath1)
-  Draw-Text $g "React x3" "Segoe UI" ([int](12 * $scale)) "Bold" $greenBrush ($x + [int](20 * $scale)) ($y + $railH + [int](104 * $scale)) ([int](94 * $scale)) ([int](28 * $scale)) "Near"
-  Draw-Text $g "POSITIVE" "Segoe UI" ([int](11 * $scale)) "Bold" $mutedBrush ($x + [int](12 * $scale)) ($y + $railH + [int](145 * $scale)) ($w - [int](24 * $scale)) ([int](22 * $scale)) "Near"
+  $tabPath = New-RoundedRect ($x + $w - [int](42 * $scale)) ($y - [int](27 * $scale)) ([int](34 * $scale)) ([int](28 * $scale)) ([int](8 * $scale))
+  $g.FillPath($cardBrush, $tabPath)
+  $g.DrawPath($borderPen, $tabPath)
+  Draw-Text $g "<" "Segoe UI" ([int](15 * $scale)) "Bold" $mutedBrush ($x + $w - [int](34 * $scale)) ($y - [int](28 * $scale)) ([int](18 * $scale)) ([int](28 * $scale)) "Center"
 
-  $chipPath2 = New-RoundedRect ($x + [int](12 * $scale)) ($y + $railH + [int](174 * $scale)) ([int](150 * $scale)) ([int](28 * $scale)) ([int](8 * $scale))
-  $g.FillPath($greenBg, $chipPath2)
-  Draw-Text $g "TS x2" "Segoe UI" ([int](12 * $scale)) "Bold" $greenBrush ($x + [int](20 * $scale)) ($y + $railH + [int](174 * $scale)) ([int](130 * $scale)) ([int](28 * $scale)) "Near"
-  $chipPath3 = New-RoundedRect ($x + [int](12 * $scale)) ($y + $railH + [int](210 * $scale)) ([int](136 * $scale)) ([int](28 * $scale)) ([int](8 * $scale))
-  $g.FillPath($greenBg, $chipPath3)
-  Draw-Text $g "Frontend x4" "Segoe UI" ([int](12 * $scale)) "Bold" $greenBrush ($x + [int](20 * $scale)) ($y + $railH + [int](210 * $scale)) ([int](116 * $scale)) ([int](28 * $scale)) "Near"
-  Draw-Text $g "NEGATIVE" "Segoe UI" ([int](11 * $scale)) "Bold" $mutedBrush ($x + [int](12 * $scale)) ($y + $railH + [int](248 * $scale)) ($w - [int](24 * $scale)) ([int](22 * $scale)) "Near"
+  $dotBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml("#4F8EF7"))
+  $g.FillEllipse($dotBrush, ($x + [int](12 * $scale)), ($y + [int](15 * $scale)), ([int](8 * $scale)), ([int](8 * $scale)))
+  Draw-Text $g "JOB MATCH" "Segoe UI" ([int](13 * $scale)) "Bold" $textBrush ($x + [int](26 * $scale)) ($y + [int](7 * $scale)) ([int](92 * $scale)) ([int](24 * $scale)) "Near"
 
-  $chipPath4 = New-RoundedRect ($x + [int](12 * $scale)) ($y + $railH + [int](276 * $scale)) ([int](100 * $scale)) ([int](28 * $scale)) ([int](8 * $scale))
-  $g.FillPath($redBg, $chipPath4)
-  Draw-Text $g "Backend x1" "Segoe UI" ([int](12 * $scale)) "Bold" $redBrush ($x + [int](20 * $scale)) ($y + $railH + [int](276 * $scale)) ([int](90 * $scale)) ([int](28 * $scale)) "Near"
+  $reloadPath = New-RoundedRect ($x + $w - [int](78 * $scale)) ($y + [int](8 * $scale)) ([int](24 * $scale)) ([int](24 * $scale)) ([int](6 * $scale))
+  $sidePath = New-RoundedRect ($x + $w - [int](50 * $scale)) ($y + [int](8 * $scale)) ([int](38 * $scale)) ([int](24 * $scale)) ([int](7 * $scale))
+  $g.FillPath($accentBrush, $reloadPath)
+  $g.FillPath($accentBrush, $sidePath)
+  Draw-Text $g "R" "Segoe UI" ([int](10 * $scale)) "Bold" $mutedBrush ($x + $w - [int](74 * $scale)) ($y + [int](8 * $scale)) ([int](16 * $scale)) ([int](24 * $scale)) "Center"
+  Draw-Text $g "|  |" "Segoe UI" ([int](10 * $scale)) "Bold" $blueBrush ($x + $w - [int](47 * $scale)) ($y + [int](8 * $scale)) ([int](32 * $scale)) ([int](24 * $scale)) "Center"
 
-  $railPath.Dispose()
+  $g.DrawLine($borderPen, $x, ($y + [int](43 * $scale)), ($x + $w), ($y + [int](43 * $scale)))
+
+  $gaugeSize = [int](80 * $scale)
+  $gaugeX = $x + [int](16 * $scale)
+  $gaugeY = $y + [int](64 * $scale)
+  $g.DrawEllipse($trackPen, $gaugeX, $gaugeY, $gaugeSize, $gaugeSize)
+  $g.DrawArc($bluePen, $gaugeX, $gaugeY, $gaugeSize, $gaugeSize, -90, 198)
+  Draw-Text $g "55%" "Segoe UI" ([int](22 * $scale)) "Bold" $blueBrush $gaugeX ($gaugeY + [int](18 * $scale)) $gaugeSize ([int](34 * $scale)) "Center"
+
+  $countsX = $x + [int](126 * $scale)
+  $countsY = $y + [int](70 * $scale)
+  $countRows = @(
+    @($greenBrush, "3/3"),
+    @($blueBrush, "7/50"),
+    @($redBrush, "7/47")
+  )
+  for ($i = 0; $i -lt $countRows.Count; $i += 1) {
+    $rowY = $countsY + [int]($i * 27 * $scale)
+    $g.FillEllipse($countRows[$i][0], $countsX, $rowY, ([int](7 * $scale)), ([int](7 * $scale)))
+    Draw-Text $g $countRows[$i][1] "Segoe UI" ([int](12 * $scale)) "Bold" $countRows[$i][0] ($countsX + [int](20 * $scale)) ($rowY - [int](7 * $scale)) ([int](58 * $scale)) ([int](22 * $scale)) "Far"
+  }
+  $g.DrawLine($borderPen, $countsX, ($countsY + [int](76 * $scale)), ($x + $w - [int](12 * $scale)), ($countsY + [int](76 * $scale)))
+  Draw-Text $g "17/100" "Segoe UI" ([int](12 * $scale)) "Bold" $mutedBrush ($countsX + [int](20 * $scale)) ($countsY + [int](78 * $scale)) ([int](58 * $scale)) ([int](22 * $scale)) "Far"
+
+  Draw-Text $g "KEYWORDS" "Segoe UI" ([int](11 * $scale)) "Bold" $mutedBrush ($x + [int](12 * $scale)) ($y + [int](164 * $scale)) ([int](120 * $scale)) ([int](22 * $scale)) "Near"
+  Draw-Text $g "Edit" "Segoe UI" ([int](10 * $scale)) "Bold" $mutedBrush ($x + $w - [int](48 * $scale)) ($y + [int](164 * $scale)) ([int](36 * $scale)) ([int](22 * $scale)) "Far"
+
+  $cards = @(
+    @($greenBrush, "Very Positive", "3 out of 3", "3"),
+    @($blueBrush, "Positive", "7 out of 50", "7"),
+    @($redBrush, "Negative", "7 out of 47", "7")
+  )
+  for ($i = 0; $i -lt $cards.Count; $i += 1) {
+    $cardY = $y + [int]((190 + ($i * 52)) * $scale)
+    $cardPath = New-RoundedRect ($x + [int](10 * $scale)) $cardY ($w - [int](20 * $scale)) ([int](44 * $scale)) ([int](8 * $scale))
+    $g.FillPath($secondaryBrush, $cardPath)
+    $g.DrawPath($borderPen, $cardPath)
+    $g.FillEllipse($cards[$i][0], ($x + [int](20 * $scale)), ($cardY + [int](12 * $scale)), ([int](20 * $scale)), ([int](20 * $scale)))
+    Draw-Text $g $cards[$i][3] "Segoe UI" ([int](10 * $scale)) "Bold" $cardBrush ($x + [int](20 * $scale)) ($cardY + [int](10 * $scale)) ([int](20 * $scale)) ([int](20 * $scale)) "Center"
+    Draw-Text $g $cards[$i][1] "Segoe UI" ([int](12 * $scale)) "Bold" $textBrush ($x + [int](50 * $scale)) ($cardY + [int](7 * $scale)) ([int](110 * $scale)) ([int](18 * $scale)) "Near"
+    Draw-Text $g $cards[$i][2] "Segoe UI" ([int](10 * $scale)) "Regular" $mutedBrush ($x + [int](50 * $scale)) ($cardY + [int](24 * $scale)) ([int](110 * $scale)) ([int](15 * $scale)) "Near"
+    $cardPath.Dispose()
+  }
+
   $panelPath.Dispose()
-  $chipPath1.Dispose()
-  $chipPath2.Dispose()
-  $chipPath3.Dispose()
-  $chipPath4.Dispose()
+  $tabPath.Dispose()
+  $reloadPath.Dispose()
+  $sidePath.Dispose()
   $cardBrush.Dispose()
+  $secondaryBrush.Dispose()
+  $accentBrush.Dispose()
   $borderPen.Dispose()
-  $greenBrush.Dispose()
-  $greenBg.Dispose()
-  $redBrush.Dispose()
-  $redBg.Dispose()
-  $darkBrush.Dispose()
+  $trackPen.Dispose()
+  $bluePen.Dispose()
+  $textBrush.Dispose()
   $mutedBrush.Dispose()
+  $blueBrush.Dispose()
+  $greenBrush.Dispose()
+  $redBrush.Dispose()
+  $dotBrush.Dispose()
 }
 
 function Draw-Promo($width, $height, $path, $includeScreenshot) {

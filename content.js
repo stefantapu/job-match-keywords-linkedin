@@ -6,7 +6,8 @@
     positive: "ljmkPositiveKeywords",
     negative: "ljmkNegativeKeywords",
     side: "ljmkPanelSide",
-    collapsed: "ljmkPanelCollapsed"
+    collapsed: "ljmkPanelCollapsed",
+    expandedCategories: "ljmkExpandedCategories"
   };
 
   const JOB_TEXT_SELECTORS = [
@@ -37,6 +38,7 @@
     collapsed: false,
     side: "right",
     expandedCategories: {},
+    editorDraft: null,
     active: false,
     keywordsLoaded: false,
     result: createEmptyResult("Scanning..."),
@@ -133,17 +135,19 @@
           STORAGE_KEYS.positive,
           STORAGE_KEYS.negative,
           STORAGE_KEYS.side,
-          STORAGE_KEYS.collapsed
+          STORAGE_KEYS.collapsed,
+          STORAGE_KEYS.expandedCategories
         ],
         (items) => {
-        state.veryPositiveInput = items[STORAGE_KEYS.veryPositive] || "";
-        state.positiveInput = items[STORAGE_KEYS.positive] || "";
-        state.negativeInput = items[STORAGE_KEYS.negative] || "";
-        state.side = items[STORAGE_KEYS.side] === "left" ? "left" : "right";
-        state.collapsed = items[STORAGE_KEYS.collapsed] === true;
-        state.keywordsLoaded = true;
-        resolve();
-      }
+          state.veryPositiveInput = items[STORAGE_KEYS.veryPositive] || "";
+          state.positiveInput = items[STORAGE_KEYS.positive] || "";
+          state.negativeInput = items[STORAGE_KEYS.negative] || "";
+          state.side = items[STORAGE_KEYS.side] === "left" ? "left" : "right";
+          state.collapsed = items[STORAGE_KEYS.collapsed] === true;
+          state.expandedCategories = sanitizeExpandedCategories(items[STORAGE_KEYS.expandedCategories]);
+          state.keywordsLoaded = true;
+          resolve();
+        }
       );
     });
   }
@@ -152,6 +156,7 @@
     state.veryPositiveInput = sanitizeKeywordInput(veryPositiveInput);
     state.positiveInput = sanitizeKeywordInput(positiveInput);
     state.negativeInput = sanitizeKeywordInput(negativeInput);
+    state.editorDraft = null;
 
     chrome.storage.sync.set(
       {
@@ -164,6 +169,15 @@
         scanAndRender();
       }
     );
+  }
+
+  function sanitizeExpandedCategories(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+    return ["very-positive", "positive", "negative"].reduce((result, key) => {
+      if (value[key] === true) result[key] = true;
+      return result;
+    }, {});
   }
 
   function sanitizeKeywordInput(value) {
@@ -253,7 +267,7 @@
       state.result.veryPositive.total = veryPositiveKeywords.length;
       state.result.positive.total = positiveKeywords.length;
       state.result.negative.total = negativeKeywords.length;
-      render();
+      renderIfNotEditing();
       return;
     }
 
@@ -271,7 +285,7 @@
       positive,
       negative
     };
-    render();
+    renderIfNotEditing();
   }
 
   function calculateWeightedScore(veryPositive, positive, negative) {
@@ -415,7 +429,7 @@
     }
 
     state.result = createEmptyResult("Scanning...");
-    render();
+    renderIfNotEditing();
 
     [0, 350, 900, 1600].forEach((delay) => {
       const timer = window.setTimeout(() => {
@@ -438,12 +452,7 @@
   function render() {
     if (!root) return;
 
-    const result = state.result;
-    const tone = getScoreTone(result.score);
-    root.setAttribute("data-editing", String(state.editing));
-    root.setAttribute("data-collapsed", String(state.collapsed));
-    root.setAttribute("data-side", state.side);
-    root.setAttribute("data-tone", tone);
+    updateRootAttributes();
 
     root.innerHTML = `
       <div class="ljmk-shell">
@@ -472,18 +481,40 @@
             </div>
           </header>
 
-          ${state.editing ? renderEditor() : renderDashboard(result)}
+          ${state.editing ? renderEditor() : renderDashboard(state.result)}
         </aside>
       </div>
     `;
 
     bindEvents();
+    autoSizeTextareas();
+  }
+
+  function renderIfNotEditing() {
+    if (state.editing) {
+      updateRootAttributes();
+      return;
+    }
+
+    render();
+  }
+
+  function updateRootAttributes() {
+    if (!root) return;
+
+    const result = state.result;
+    const tone = getScoreTone(result.score);
+    root.setAttribute("data-editing", String(state.editing));
+    root.setAttribute("data-collapsed", String(state.collapsed));
+    root.setAttribute("data-side", state.side);
+    root.setAttribute("data-tone", tone);
   }
 
   function renderDashboard(result) {
     const categories = getCategoryViewModels(result);
     const foundTotal = categories.reduce((total, category) => total + category.foundCount, 0);
     const keywordTotal = categories.reduce((total, category) => total + category.total, 0);
+    const hasKeywords = keywordTotal > 0;
 
     return `
       <section class="ljmk-score-section">
@@ -503,10 +534,16 @@
       <section class="ljmk-keywords">
         <div class="ljmk-section-head">
           <span>Keywords</span>
-          <button class="ljmk-edit-button" type="button" data-action="edit" aria-label="Edit keywords" title="Edit keywords">
-            ${pencilIcon()}
-          </button>
+          <span class="ljmk-section-tools">
+            <span class="ljmk-help" tabindex="0" role="img" aria-label="Add words or phrases in Edit keywords. Separate each one with a comma, for example React, TypeScript, remote work." data-tooltip="Add words or phrases in Edit keywords. Separate each one with a comma, e.g. React, TypeScript, remote work.">
+              ${infoIcon()}
+            </span>
+            <button class="ljmk-edit-button ${hasKeywords ? "" : "is-empty"}" type="button" data-action="edit" aria-label="${hasKeywords ? "Edit keywords" : "Add keywords"}" title="${hasKeywords ? "Edit keywords" : "Add keywords"}">
+              ${pencilIcon()}
+            </button>
+          </span>
         </div>
+        ${hasKeywords ? "" : renderEmptyKeywordsNotice()}
         <div class="ljmk-category-list">
           ${categories.map(renderCategoryCard).join("")}
         </div>
@@ -514,7 +551,18 @@
     `;
   }
 
+  function renderEmptyKeywordsNotice() {
+    return `
+      <div class="ljmk-empty-notice" role="status">
+        <strong>Add keywords first</strong>
+        <span>Click the pencil and enter words or phrases separated by commas.</span>
+      </div>
+    `;
+  }
+
   function renderEditor() {
+    const draft = getEditorDraft();
+
     return `
       <section class="ljmk-editor">
         <div class="ljmk-editor-head">
@@ -528,15 +576,15 @@
         </div>
         <label class="ljmk-field">
           <span>Very positive</span>
-          <textarea data-field="very-positive" rows="3" spellcheck="false" placeholder="React, TypeScript">${escapeHtml(state.veryPositiveInput)}</textarea>
+          <textarea data-field="very-positive" rows="3" spellcheck="false" placeholder="React, TypeScript">${escapeHtml(draft.veryPositiveInput)}</textarea>
         </label>
         <label class="ljmk-field">
           <span>Positive</span>
-          <textarea data-field="positive" rows="4" spellcheck="false" placeholder="Frontend, SaaS, remote work">${escapeHtml(state.positiveInput)}</textarea>
+          <textarea data-field="positive" rows="4" spellcheck="false" placeholder="Frontend, SaaS, remote work">${escapeHtml(draft.positiveInput)}</textarea>
         </label>
         <label class="ljmk-field">
           <span>Negative</span>
-          <textarea data-field="negative" rows="4" spellcheck="false" placeholder="PHP, unpaid, onsite only">${escapeHtml(state.negativeInput)}</textarea>
+          <textarea data-field="negative" rows="4" spellcheck="false" placeholder="PHP, unpaid, onsite only">${escapeHtml(draft.negativeInput)}</textarea>
         </label>
         <div class="ljmk-editor-actions">
           <button class="ljmk-button ljmk-button-secondary" type="button" data-action="cancel-edit">Cancel</button>
@@ -544,6 +592,18 @@
         </div>
       </section>
     `;
+  }
+
+  function getEditorDraft() {
+    if (!state.editorDraft) {
+      state.editorDraft = {
+        veryPositiveInput: state.veryPositiveInput,
+        positiveInput: state.positiveInput,
+        negativeInput: state.negativeInput
+      };
+    }
+
+    return state.editorDraft;
   }
 
   function getCategoryViewModels(result) {
@@ -604,7 +664,9 @@
 
   function renderCategoryCard(category) {
     const expanded = state.expandedCategories[category.key] === true;
-    const words = category.found.length
+    const words = category.total === 0
+      ? `<span class="ljmk-empty">No keywords added</span>`
+      : category.found.length
       ? category.found.map((item) => `<span class="ljmk-chip ljmk-chip-${category.key}">${escapeHtml(`${item.label} x${item.count}`)}</span>`).join("")
       : `<span class="ljmk-empty">None found</span>`;
 
@@ -631,6 +693,11 @@
     });
 
     root.querySelectorAll("textarea").forEach((element) => {
+      element.addEventListener("input", () => {
+        updateEditorDraftFromDom();
+        autoSizeTextarea(element);
+      });
+
       element.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
           event.preventDefault();
@@ -665,6 +732,7 @@
     if (action === "toggle-category") {
       const category = event.currentTarget.getAttribute("data-category");
       state.expandedCategories[category] = state.expandedCategories[category] !== true;
+      saveLayoutPreference({ [STORAGE_KEYS.expandedCategories]: state.expandedCategories });
       render();
       return;
     }
@@ -673,6 +741,7 @@
       state.collapsed = false;
       saveLayoutPreference({ [STORAGE_KEYS.collapsed]: state.collapsed });
       state.editing = true;
+      state.editorDraft = null;
       render();
       const field = root.querySelector('[data-field="very-positive"]');
       if (field) field.focus();
@@ -681,15 +750,15 @@
 
     if (action === "cancel-edit") {
       state.editing = false;
+      state.editorDraft = null;
       render();
       return;
     }
 
     if (action === "save") {
-      const veryPositiveInput = root.querySelector('[data-field="very-positive"]')?.value || "";
-      const positiveInput = root.querySelector('[data-field="positive"]')?.value || "";
-      const negativeInput = root.querySelector('[data-field="negative"]')?.value || "";
-      saveKeywords(veryPositiveInput, positiveInput, negativeInput);
+      updateEditorDraftFromDom();
+      const draft = getEditorDraft();
+      saveKeywords(draft.veryPositiveInput, draft.positiveInput, draft.negativeInput);
       return;
     }
 
@@ -700,6 +769,31 @@
 
   function saveLayoutPreference(values) {
     chrome.storage.sync.set(values);
+  }
+
+  function updateEditorDraftFromDom() {
+    if (!root || !state.editing) return;
+
+    state.editorDraft = {
+      veryPositiveInput: root.querySelector('[data-field="very-positive"]')?.value || "",
+      positiveInput: root.querySelector('[data-field="positive"]')?.value || "",
+      negativeInput: root.querySelector('[data-field="negative"]')?.value || ""
+    };
+  }
+
+  function autoSizeTextareas() {
+    if (!root) return;
+    root.querySelectorAll("textarea").forEach(autoSizeTextarea);
+  }
+
+  function autoSizeTextarea(element) {
+    if (!element) return;
+
+    const maxHeight = Math.max(120, Math.min(260, Math.round(window.innerHeight * 0.32)));
+    element.style.height = "auto";
+    const nextHeight = Math.min(element.scrollHeight + 2, maxHeight);
+    element.style.height = `${nextHeight}px`;
+    element.style.overflowY = element.scrollHeight > maxHeight ? "auto" : "hidden";
   }
 
   function escapeHtml(value) {
@@ -715,6 +809,14 @@
     return `
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M4 20h4.4L19.7 8.7a2.1 2.1 0 0 0 0-3L18.3 4.3a2.1 2.1 0 0 0-3 0L4 15.6V20Zm3.6-2H6v-1.6l8.7-8.7 1.6 1.6L7.6 18Zm10.1-10.1-1.6-1.6.6-.6 1.6 1.6-.6.6Z"/>
+      </svg>
+    `;
+  }
+
+  function infoIcon() {
+    return `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M11 10h2v7h-2v-7Zm0-3h2v2h-2V7Zm1-5a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"/>
       </svg>
     `;
   }
